@@ -3,7 +3,7 @@
 set -e  # Exit immediately if any command fails
 
 # Get the latest release zip URL and download
-ZIP_URL=$(curl -s "https://api.github.com/repos/akash73/arduinoarduino-uno-q-apps/releases/latest" | \
+ZIP_URL=$(curl -s "https://api.github.com/repos/akash73/arduino-uno-q-apps/releases/latest" | \
 grep '"browser_download_url": "[^"]*\.zip"' | \
 cut -d'"' -f4 | head -n1)
 
