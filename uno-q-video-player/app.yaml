@@ -1,0 +1,6 @@
+name: UNO Q Video Player
+description: Blink an LED via microcontroller using RPC calls
+ports: []
+bricks:
+- arduino:streamlit_ui: {}
+icon: 💡
