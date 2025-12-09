@@ -4,7 +4,7 @@
 INSTALL_DIR="$HOME/ArduinoApps"
 mkdir -p "$INSTALL_DIR"
 
-# 1. DOWNLOAD (Original logic)
+# 1. DOWNLOAD
 # ------------------------------------------------
 echo "🔍 Searching for the latest release on GitHub..."
 ZIP_URL=$(curl -s "https://api.github.com/repos/akash73/arduino-uno-q-apps/releases/latest" | \
@@ -20,26 +20,27 @@ ZIP_NAME=$(basename "$ZIP_URL")
 echo "⬇️  Downloading: $ZIP_NAME"
 
 cd /tmp
-rm -f app.zip # Remove old residues
+rm -f app.zip 
 curl -sL "$ZIP_URL" -o app.zip
 
 echo "📦 Extracting files..."
 unzip -q app.zip
 rm -f app.zip
 
-# Find the extracted folder (usually arduino-uno-q-apps-main but might change with branch name)
+# Find the extracted folder
 EXTRACTED_DIR=$(ls -d arduino-uno-q-apps-*)
 cd "$EXTRACTED_DIR" || exit 1
 
 # 2. INTERACTIVE SELECTION
 # ------------------------------------------------
 
-# Create an array with available folders (each folder is an app)
-# Excludes files, takes only directories (*/) and removes trailing slash
-APPS=($(ls -d */ | sed 's/\///'))
+# Get list of subdirectories (apps)
+APPS=($(ls -d */ 2>/dev/null | sed 's/\///'))
 
 if [ ${#APPS[@]} -eq 0 ]; then
-    echo "⚠️  No applications found inside the package."
+    echo "⚠️  No applications found inside the package ($EXTRACTED_DIR)."
+    # Debug info: list content to see what went wrong
+    ls -la
     exit 1
 fi
 
@@ -57,7 +58,14 @@ echo "Enter the numbers of the apps you want to install, separated by spaces."
 echo "Example: 1 3 (to install the first and third apps)"
 echo "Or type 'all' to install them all."
 echo ""
-read -p "Selection: " SELECTION
+
+# FIX: Force reading from terminal even if script is piped
+if [ -t 0 ]; then
+    read -p "Selection: " SELECTION
+else
+    # Fallback for curl | bash usage
+    read -p "Selection: " SELECTION < /dev/tty
+fi
 
 APPS_TO_INSTALL=()
 
@@ -65,7 +73,6 @@ if [ "$SELECTION" == "all" ]; then
     APPS_TO_INSTALL=("${APPS[@]}")
 else
     for index in $SELECTION; do
-        # Verify input is a valid number
         if [[ "$index" =~ ^[0-9]+$ ]] && [ "$index" -ge 1 ] && [ "$index" -le "${#APPS[@]}" ]; then
             REAL_INDEX=$((index-1))
             APPS_TO_INSTALL+=("${APPS[$REAL_INDEX]}")
@@ -89,7 +96,6 @@ echo "🚀 Installation in progress at: $INSTALL_DIR"
 for app_name in "${APPS_TO_INSTALL[@]}"; do
     DEST_PATH="$INSTALL_DIR/$app_name"
     
-    # If app already exists, remove it to perform a clean update
     if [ -d "$DEST_PATH" ]; then
         echo "   Updating $app_name (overwriting)..."
         rm -rf "$DEST_PATH"
@@ -97,7 +103,6 @@ for app_name in "${APPS_TO_INSTALL[@]}"; do
         echo "   Installing $app_name..."
     fi
     
-    # Move the specific folder
     mv "$app_name" "$INSTALL_DIR/"
 done
 
